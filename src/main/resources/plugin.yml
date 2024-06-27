@@ -1,0 +1,9 @@
+name: AmCrate
+version: '${version}'
+main: com.amam.amcrate.AmCrate
+api-version: '1.20'
+load: STARTUP
+authors: [Am4m]
+commands:
+  crate:
+    usage: /<command>
