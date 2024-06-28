@@ -1,5 +1,6 @@
 package com.amam.amcrate.command;
 
+import com.amam.amcrate.AmCrate;
 import com.amam.amcrate.crate.Crate;
 import com.amam.amcrate.crate.CrateManager;
 import com.amam.amcrate.crate.Reward;
@@ -26,8 +27,10 @@ public class CrateCommand implements TabExecutor {
         addSubCommand((sender, args) -> {
             if (args.length > 1) {
                 if (CrateManager.getCrate(args[1]) == null) {
-                    CrateManager.addCrate(args[1].toLowerCase(), Crate.createHorizontal(args[1], Component.text(args[1])));
+                    var crate = Crate.createHorizontal(args[1], Component.text(args[1]));
+                    CrateManager.addCrate(args[1].toLowerCase(), crate);
                     sender.sendMessage("Crate " + args[1] + " created !");
+                    AmCrate.getCrateConfig().createConfig(crate);
                 } else sender.sendMessage("Crate already exist !");
             } else sender.sendMessage("Usage: /crate create [name]");
 
@@ -73,7 +76,8 @@ public class CrateCommand implements TabExecutor {
                         // /crate reward <name> <add|remove> <int>
                         if (args.length > 3) {
                             if (args[2].equalsIgnoreCase("add") && NumberUtils.isDigits(args[3])) {
-                                if (!p.getInventory().getItemInMainHand().getType().isEmpty()) {
+                                var hand = p.getInventory().getItemInMainHand();
+                                if (!hand.getType().isEmpty()) {
                                     crate.addReward(new Reward(p.getInventory().getItemInMainHand(), Integer.parseInt(args[3])));
                                     p.sendMessage("Reward added");
                                     return;

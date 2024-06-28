@@ -13,12 +13,12 @@ import java.util.Arrays;
 public class CrateInventory {
 
     private final int rewardSlot;
-    private final CrateType type;
+    private final CratePreset type;
     private final Material overlay;
     private final Material pointerMaterial;
     private final int[] pointerSlot;
 
-    public CrateInventory(@NotNull CrateType type, int rewardSlot,@NotNull Material overlay,@NotNull Material pointerMaterial, int... pointerSlot) {
+    public CrateInventory(@NotNull CratePreset type, int rewardSlot, @NotNull Material overlay, @NotNull Material pointerMaterial, int... pointerSlot) {
         this.rewardSlot = rewardSlot;
         this.type = type;
         this.overlay = overlay;
@@ -46,7 +46,7 @@ public class CrateInventory {
         return rewardSlot;
     }
 
-    public CrateType getType() {
+    public CratePreset getType() {
         return type;
     }
 }
