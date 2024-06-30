@@ -7,3 +7,5 @@ authors: [Am4m]
 commands:
   crate:
     usage: /<command>
+  key:
+    usage: /<key>

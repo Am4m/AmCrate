@@ -5,7 +5,6 @@ import com.amam.amcrate.crate.Crate;
 import com.amam.amcrate.crate.CrateManager;
 import com.amam.amcrate.crate.Reward;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -28,7 +27,7 @@ public class CrateCommand implements TabExecutor {
             if (args.length > 1) {
                 if (CrateManager.getCrate(args[1]) == null) {
                     var crate = Crate.createHorizontal(args[1], Component.text(args[1]));
-                    CrateManager.addCrate(args[1].toLowerCase(), crate);
+                    CrateManager.addCrate(args[1].toLowerCase(), crate);;
                     sender.sendMessage("Crate " + args[1] + " created !");
                     AmCrate.getCrateConfig().createConfig(crate);
                 } else sender.sendMessage("Crate already exist !");
@@ -38,7 +37,8 @@ public class CrateCommand implements TabExecutor {
 
         addSubCommand((sender, args) -> {
             if (args.length > 1) {
-                if (CrateManager.getCrate(args[1]) != null) {
+                var crate = CrateManager.getCrate(args[1]);
+                if (crate != null) {
                     CrateManager.removeCrate(args[1].toLowerCase());
                     sender.sendMessage("Crate " + args[1] + " deleted !");
                 } else sender.sendMessage("There's no crate named " + args[1]);
@@ -49,7 +49,7 @@ public class CrateCommand implements TabExecutor {
         addSubCommand((sender, args) -> {
             sender.sendMessage("Crate List:");
             for (Crate crate : CrateManager.getCrates()) {
-                sender.sendMessage("- " + crate.getId() + ": " + ((TextComponent) crate.getDisplayName()).content());
+                sender.sendMessage(Component.text("-" + crate.getId() + ": ").append(crate.getCrateInventory().getDisplay()));
             }
         }, "list");
 
@@ -79,6 +79,7 @@ public class CrateCommand implements TabExecutor {
                                 var hand = p.getInventory().getItemInMainHand();
                                 if (!hand.getType().isEmpty()) {
                                     crate.addReward(new Reward(p.getInventory().getItemInMainHand(), Integer.parseInt(args[3])));
+                                    AmCrate.getCrateConfig().saveConfig(args[1]);
                                     p.sendMessage("Reward added");
                                     return;
                                 }
@@ -87,6 +88,7 @@ public class CrateCommand implements TabExecutor {
                             }
                             if (args[2].equalsIgnoreCase("remove") && NumberUtils.isDigits(args[3])) {
                                 crate.removeReward(Integer.parseInt(args[3]));
+                                AmCrate.getCrateConfig().saveConfig(args[1]);
                                 p.sendMessage("Reward removed");
                             }
                         } else {
@@ -98,8 +100,6 @@ public class CrateCommand implements TabExecutor {
                     } else sender.sendMessage("There's no crate named " + args[1]);
                 } else sender.sendMessage("Usage: /crate reward [name]");
             } else sender.sendMessage("This command can only be run by a player.");
-
-
         }, "reward");
     }
 
@@ -125,9 +125,7 @@ public class CrateCommand implements TabExecutor {
             return StringUtil.copyPartialMatches(args[0], subCommandList, matches);
 
         if (args.length == 2 && (args[0].equalsIgnoreCase("reward") || args[0].equalsIgnoreCase("remove") || args[0].equalsIgnoreCase("open"))) {
-            List<String> crateList = new ArrayList<>();
-            for (Crate crate : CrateManager.getCrates()) crateList.add(crate.getId());
-            return StringUtil.copyPartialMatches(args[1], crateList, matches);
+            return StringUtil.copyPartialMatches(args[1], CrateManager.getCratesId(), matches);
         }
 
         if (args.length == 3 && args[0].equalsIgnoreCase("reward"))

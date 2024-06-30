@@ -1,7 +1,9 @@
 package com.amam.amcrate;
 
 import com.amam.amcrate.command.CrateCommand;
+import com.amam.amcrate.command.KeyCommand;
 import com.amam.amcrate.config.CrateConfig;
+import com.amam.amcrate.crate.inventory.CrateListener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class AmCrate extends JavaPlugin {
@@ -14,7 +16,10 @@ public final class AmCrate extends JavaPlugin {
         plugin = this;
         getLogger().info("AmCrate enabled");
         this.getCommand("crate").setExecutor(new CrateCommand());
+        this.getCommand("key").setExecutor(new KeyCommand());
+        getServer().getPluginManager().registerEvents(new CrateListener(), this);
         config = new CrateConfig(this);
+        config.loadConfig(this);
 //        Crate crate = Crate.createCircle("tes", Component.text("text"));
 //        CrateManager.addCrate(crate.getId(), crate);
 //        CrateManager.getCrate("tes").addReward(new Reward(new ItemStack(Material.DIAMOND), 50));

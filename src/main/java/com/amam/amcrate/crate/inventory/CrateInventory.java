@@ -1,6 +1,6 @@
-package com.amam.amcrate.crate;
+package com.amam.amcrate.crate.inventory;
 
-import com.amam.amcrate.utlis.Utils;
+import com.amam.amcrate.utils.Utils;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -17,20 +17,27 @@ public class CrateInventory {
     private final Material overlay;
     private final Material pointerMaterial;
     private final int[] pointerSlot;
+    private final Component display;
+    final int max;
+    final int row;
+    final int size;
 
-    public CrateInventory(@NotNull CratePreset type, int rewardSlot, @NotNull Material overlay, @NotNull Material pointerMaterial, int... pointerSlot) {
+    public CrateInventory(@NotNull Component display, @NotNull CratePreset type, int rewardSlot, @NotNull Material overlay, @NotNull Material pointerMaterial, int... pointerSlot) {
         this.rewardSlot = rewardSlot;
         this.type = type;
         this.overlay = overlay;
         this.pointerMaterial = pointerMaterial;
+        this.display = display;
         this.pointerSlot = pointerSlot;
+
+        max = Math.max(Arrays.stream(pointerSlot).max().orElse(0), Arrays.stream(type.slots()).max().orElse(6));
+        row = Math.ceilDiv(max, 9);
+        size = row * 9;
     }
 
     public Inventory getInventory() {
-        final int max = Math.max(Arrays.stream(pointerSlot).max().orElse(0), Arrays.stream(type.slots()).max().orElse(6));
-        final int row = Math.ceilDiv(max, 9);
-        final int size = row * 9;
-        Inventory inventory = Bukkit.createInventory(null, size);
+
+        Inventory inventory = Bukkit.createInventory(null, size, display);
         final ItemStack[] contents = new ItemStack[size];
         final ItemStack item = Utils.createItem(overlay, Component.empty());
         Arrays.fill(contents, item);
@@ -48,5 +55,9 @@ public class CrateInventory {
 
     public CratePreset getType() {
         return type;
+    }
+
+    public Component getDisplay() {
+        return display;
     }
 }

@@ -1,4 +1,4 @@
-package com.amam.amcrate.crate;
+package com.amam.amcrate.crate.inventory;
 
 import org.jetbrains.annotations.NotNull;
 

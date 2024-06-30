@@ -1,4 +1,4 @@
-package com.amam.amcrate.utlis;
+package com.amam.amcrate.utils;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;

@@ -7,13 +7,21 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class CrateManager {
 
     private static final Map<String, Crate> CRATES = new HashMap<>();
+    private static final Set<UUID> playerOpeningCrate = new HashSet<>();
+    private static final Set<String> CRATES_ID = CRATES.keySet();
+
+    public static Set<String> getCratesId() {
+        return CRATES_ID;
+    }
+
+    public static boolean isPlayerOpeningCrate(UUID uuid) {
+        return playerOpeningCrate.contains(uuid);
+    }
 
     public static Crate[] getCrates() {
         return CRATES.values().toArray(new Crate[0]);
@@ -32,6 +40,11 @@ public class CrateManager {
     }
 
     public static void openCrate(Crate crate, Player player) {
+        if (!crate.hasKey(player)) {
+            player.sendMessage("You do not have keys !");
+            return;
+        }
+        playerOpeningCrate.add(player.getUniqueId());
         Inventory inventory = crate.getCrateInventory().getInventory();
         int[] slots = crate.getCrateInventory().getType().slots();
 
@@ -39,12 +52,20 @@ public class CrateManager {
         for (int i = 0; i < rewards.length; i++)
             rewards[i] = getRandomReward(crate.getRewards()).itemStack();
         player.openInventory(inventory);
-        startRecursiveTask(player, inventory, rewards, slots, 0, 1L);
+        startRecursiveTask(player, inventory, rewards, slots, 0, 1L, crate.getCrateInventory().getRewardSlot());
     }
 
-    private static void startRecursiveTask(Player player, Inventory inventory, ItemStack[] rewards, int[] slots, int count, long delay) {
+    private static void startRecursiveTask(Player player, Inventory inventory, ItemStack[] rewards, int[] slots, int count, long delay, int rewardSlot) {
         final int slotsLength = slots.length;
-        if (delay > 9) return;
+        if (!player.isOnline()) {
+            playerOpeningCrate.remove(player.getName());
+            return;
+        }
+        if (delay > 9) {
+            player.getInventory().addItem(inventory.getItem(rewardSlot));
+            playerOpeningCrate.remove(player.getName());
+            return;
+        }
 
         for (int i = 0; i <= count; i++) {
             ItemStack item = rewards[count - i];
@@ -63,20 +84,18 @@ public class CrateManager {
         final int finalCount = count;
         final long finalDelay = delay;
 
-        Bukkit.getScheduler().runTaskLaterAsynchronously(AmCrate.plugin, () -> startRecursiveTask(player, inventory, rewards, slots, finalCount, finalDelay), finalDelay);
+        Bukkit.getScheduler().runTaskLaterAsynchronously(AmCrate.plugin, () -> startRecursiveTask(player, inventory, rewards, slots, finalCount, finalDelay, rewardSlot), finalDelay);
     }
 
     private static Reward getRandomReward(List<Reward> rewards) {
-        // Calculate Total chance
-        int totalWeight = rewards.stream().mapToInt(Reward::chance).sum();
 
-        // Between 0 - totalWeight
+        int totalWeight = rewards.stream().mapToInt(Reward::chance).sum();
         int randomIndex = (int)(Math.random() * totalWeight);
 
         int currentWeightSum = 0;
         for (Reward reward : rewards) {
             currentWeightSum += reward.chance();
-            // This comparison determines the chance
+
             if (currentWeightSum > randomIndex) {
                 return reward;
             }
