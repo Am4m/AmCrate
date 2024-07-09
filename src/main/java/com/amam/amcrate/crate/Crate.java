@@ -3,6 +3,7 @@ package com.amam.amcrate.crate;
 import com.amam.amcrate.crate.inventory.CrateInventory;
 import com.amam.amcrate.crate.inventory.CratePreset;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -14,8 +15,8 @@ public final class Crate {
     private final String id;
     private final List<Reward> rewards;
     private CrateInventory crateInventory;
-    // player name
-    private final Map<UUID, Integer> playerKeys;
+    private CratePosition position;
+    private final Map<Player, Integer> playerKeys;
 
     public static Crate createHorizontal(String id, Component displayName) {
         return new Crate(id, new CrateInventory(displayName, CratePreset.Type.HORIZONTAL.getPreset(), 13, Material.BLACK_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, 4, 22));
@@ -38,12 +39,16 @@ public final class Crate {
         this.playerKeys = new HashMap<>();
     }
 
-    public boolean hasKey(UUID uuid) {
-        return playerKeys.getOrDefault(uuid, 0) > 0;
+    public boolean hasKey(Player player) {
+        return playerKeys.getOrDefault(player, 0) > 0;
     }
 
-    public void setKeys(UUID uuid, int keys) {
-        playerKeys.put(uuid, keys);
+    public void subtractKey(Player player, int value) {
+        playerKeys.compute(player, (k, amount) -> amount - value);
+    }
+
+    public void setKeys(Player player, int value) {
+        playerKeys.put(player, value);
     }
 
     public String getId() {
@@ -62,11 +67,19 @@ public final class Crate {
         rewards.remove(index);
     }
 
-    public CrateInventory getCrateInventory() {
+    public @NotNull CrateInventory getCrateInventory() {
         return crateInventory;
     }
 
     public void setCrateInventory(CrateInventory inventory) {
         this.crateInventory = inventory;
+    }
+
+    public CratePosition getPosition() {
+        return position;
+    }
+
+    public void setPosition(CratePosition position) {
+        this.position = position;
     }
 }

@@ -1,8 +1,6 @@
 package com.amam.amcrate.command;
 
-import com.amam.amcrate.crate.Crate;
 import com.amam.amcrate.crate.CrateManager;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;

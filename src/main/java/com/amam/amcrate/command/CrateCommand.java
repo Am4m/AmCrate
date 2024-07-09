@@ -1,11 +1,13 @@
 package com.amam.amcrate.command;
 
-import com.amam.amcrate.AmCrate;
 import com.amam.amcrate.crate.Crate;
 import com.amam.amcrate.crate.CrateManager;
+import com.amam.amcrate.crate.CratePosition;
 import com.amam.amcrate.crate.Reward;
+import com.amam.amcrate.utils.Utils;
 import net.kyori.adventure.text.Component;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -24,12 +26,26 @@ public class CrateCommand implements TabExecutor {
     public CrateCommand() {
 
         addSubCommand((sender, args) -> {
+            if (sender instanceof Player player) {
+                if (args.length > 1) {
+                    var crate = CrateManager.getCrate(args[1]);
+                    if (crate != null) {
+                        crate.setPosition(CratePosition.fromLocation(player.getLocation()));
+                        player.sendMessage("block set");
+                        CrateManager.addCratePosition(crate);
+                        CrateManager.saveConfig(crate);
+                    }
+                }
+            }
+        }, "setblock");
+
+        addSubCommand((sender, args) -> {
             if (args.length > 1) {
                 if (CrateManager.getCrate(args[1]) == null) {
                     var crate = Crate.createHorizontal(args[1], Component.text(args[1]));
-                    CrateManager.addCrate(args[1].toLowerCase(), crate);;
+                    CrateManager.CRATES.add(crate);
                     sender.sendMessage("Crate " + args[1] + " created !");
-                    AmCrate.getCrateConfig().createConfig(crate);
+                    CrateManager.createConfig(crate);
                 } else sender.sendMessage("Crate already exist !");
             } else sender.sendMessage("Usage: /crate create [name]");
 
@@ -48,7 +64,7 @@ public class CrateCommand implements TabExecutor {
 
         addSubCommand((sender, args) -> {
             sender.sendMessage("Crate List:");
-            for (Crate crate : CrateManager.getCrates()) {
+            for (Crate crate : CrateManager.CRATES) {
                 sender.sendMessage(Component.text("-" + crate.getId() + ": ").append(crate.getCrateInventory().getDisplay()));
             }
         }, "list");
@@ -79,7 +95,7 @@ public class CrateCommand implements TabExecutor {
                                 var hand = p.getInventory().getItemInMainHand();
                                 if (!hand.getType().isEmpty()) {
                                     crate.addReward(new Reward(p.getInventory().getItemInMainHand(), Integer.parseInt(args[3])));
-                                    AmCrate.getCrateConfig().saveConfig(args[1]);
+                                    CrateManager.saveConfig(crate);
                                     p.sendMessage("Reward added");
                                     return;
                                 }
@@ -88,7 +104,7 @@ public class CrateCommand implements TabExecutor {
                             }
                             if (args[2].equalsIgnoreCase("remove") && NumberUtils.isDigits(args[3])) {
                                 crate.removeReward(Integer.parseInt(args[3]));
-                                AmCrate.getCrateConfig().saveConfig(args[1]);
+                                CrateManager.saveConfig(crate);
                                 p.sendMessage("Reward removed");
                             }
                         } else {

@@ -2,7 +2,7 @@ name: AmCrate
 version: '${version}'
 main: com.amam.amcrate.AmCrate
 api-version: '1.20'
-load: STARTUP
+load: POSTWORLD
 authors: [Am4m]
 commands:
   crate:
