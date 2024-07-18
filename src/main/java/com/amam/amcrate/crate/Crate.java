@@ -3,7 +3,6 @@ package com.amam.amcrate.crate;
 import com.amam.amcrate.crate.inventory.CrateInventory;
 import com.amam.amcrate.crate.inventory.CratePreset;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -43,12 +42,16 @@ public final class Crate {
         return playerKeys.getOrDefault(player, 0) > 0;
     }
 
-    public void subtractKey(Player player, int value) {
-        playerKeys.compute(player, (k, amount) -> amount - value);
-    }
-
     public void setKeys(Player player, int value) {
         playerKeys.put(player, value);
+    }
+
+    public void sumKeys(Player player, int value) {
+        playerKeys.put(player, playerKeys.getOrDefault(player, 0) + value);
+    }
+
+    public int getKeys(Player player) {
+        return playerKeys.get(player);
     }
 
     public String getId() {

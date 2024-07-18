@@ -1,0 +1,6 @@
+# MESSAGES
+# PLACEHOLDER: %crate%, %reward%
+
+prefix: "&c[ &rAmCrate &c] "
+no-keys: "&c You do not have %crate% keys !"
+reward: "&a You get %reward% from %crate%"

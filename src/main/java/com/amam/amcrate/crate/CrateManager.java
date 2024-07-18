@@ -2,6 +2,8 @@ package com.amam.amcrate.crate;
 
 import com.amam.amcrate.AmCrate;
 import com.amam.amcrate.crate.inventory.CratePreset;
+import com.amam.amcrate.utils.Messages;
+import com.amam.amcrate.utils.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
@@ -49,7 +51,6 @@ public class CrateManager {
     }
 
     public static void addCratePosition(Crate crate) {
-        CRATE_BLOCKS.remove(crate.getPosition());
         CRATE_BLOCKS.put(crate.getPosition(), crate);
     }
 
@@ -61,10 +62,10 @@ public class CrateManager {
         CRATES.remove(id);
     }
 
-    public static void openCrate(Crate crate, Player player) {
+    public static boolean openCrate(Crate crate, Player player) {
         if (!crate.hasKey(player)) {
-            player.sendMessage("You do not have keys !");
-            return;
+            player.sendMessage(Messages.getPrefix(Component.text(crate.getId()), Component.empty()).append(Messages.getNoKeys(Component.text(crate.getId()), Component.empty())));
+            return false;
         }
         playerOpeningCrate.put(player, crate);
         Inventory inventory = crate.getCrateInventory().getInventory();
@@ -75,13 +76,25 @@ public class CrateManager {
             rewards[i] = getRandomReward(crate.getRewards()).itemStack();
         player.openInventory(inventory);
         startRecursiveTask(player, inventory, rewards, slots, 0, 1L, crate.getCrateInventory().getRewardSlot());
+        return true;
     }
 
     private static void startRecursiveTask(Player player, Inventory inventory, ItemStack[] rewards, int[] slots, int count, long delay, int rewardSlot) {
+
+        if (!player.isOnline()) return;
         if (delay > 9) {
-            player.getInventory().addItem(inventory.getItem(rewardSlot));
-            playerOpeningCrate.get(player).subtractKey(player, 1);
-            playerOpeningCrate.remove(player);
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                var reward = inventory.getItem(rewardSlot);
+                player.getInventory().addItem(reward);
+                var crate = playerOpeningCrate.get(player);
+                crate.sumKeys(player, -1);
+                Utils.saveKeys(player.getName(), crate.getId(), crate.getKeys(player));
+                playerOpeningCrate.remove(player);
+                player.closeInventory();
+                player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+                player.sendMessage(Messages.getPrefix(Component.text(crate.getId()), reward.displayName())
+                        .append(Messages.getReward(Component.text(crate.getId()), reward.displayName())));
+            });
             return;
         }
 
@@ -126,7 +139,7 @@ public class CrateManager {
     }
 
     public static void createConfig(Crate crate) {
-        if (!plugin.getDataFolder().exists())plugin.getDataFolder().mkdir();
+        if (!plugin.getDataFolder().exists()) plugin.getDataFolder().mkdir();
         var file = new File(plugin.getDataFolder() + File.separator + "crates", crate.getId() +".yml");
         if (!file.getParentFile().exists()) file.getParentFile().mkdir();
         if (!file.exists()) {
@@ -150,12 +163,15 @@ public class CrateManager {
         File cratesFolder = new File(plugin.getDataFolder(), "crates");
         if (!cratesFolder.exists() || !cratesFolder.isDirectory()) {
             plugin.getLogger().warning("Crates folder does not exist or is not a directory.");
+            plugin.getLogger().warning("Creating a new one !");
+            cratesFolder.mkdir();
             return;
         }
 
         File[] files = cratesFolder.listFiles();
         if (files == null) return;
-
+        CRATES.clear();
+        CRATES_LOCATION.clear();
         for (File file : files) {
             FileConfiguration config = YamlConfiguration.loadConfiguration(file);
 
@@ -177,12 +193,11 @@ public class CrateManager {
                 preset = CratePreset.Type.HORIZONTAL;
             }
 
-            Crate crate;
-            switch (preset) {
-                case CIRCLE -> crate = Crate.createCircle(id, display);
-                case SNAKE -> crate = Crate.createSnake(id, display);
-                default -> crate = Crate.createHorizontal(id, display);
-            }
+            Crate crate = switch (preset) {
+                case CIRCLE -> Crate.createCircle(id, display);
+                case SNAKE -> Crate.createSnake(id, display);
+                default -> Crate.createHorizontal(id, display);
+            };
 
             try {
                 var rewardSection = config.getConfigurationSection("rewards");
@@ -220,8 +235,8 @@ public class CrateManager {
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to load crate data from " + file.getName() + ": " + e.getMessage());
             }
-
             CRATES.add(crate);
+            addCratePosition(crate);
         }
     }
 

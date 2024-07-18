@@ -3,9 +3,10 @@ version: '${version}'
 main: com.amam.amcrate.AmCrate
 api-version: '1.20'
 load: POSTWORLD
-authors: [Am4m]
+author: Am4m
+website: github.com/Am4m/AmCrate
 commands:
   crate:
     usage: /<command>
   key:
-    usage: /<key>
+    usage: /<command>

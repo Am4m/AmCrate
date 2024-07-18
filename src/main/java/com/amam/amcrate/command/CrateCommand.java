@@ -4,10 +4,10 @@ import com.amam.amcrate.crate.Crate;
 import com.amam.amcrate.crate.CrateManager;
 import com.amam.amcrate.crate.CratePosition;
 import com.amam.amcrate.crate.Reward;
-import com.amam.amcrate.utils.Utils;
+import com.amam.amcrate.utils.Messages;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -22,8 +22,16 @@ public class CrateCommand implements TabExecutor {
 
     private final Map<String, BiConsumer<CommandSender, String[]>> subCommands = new HashMap<>();
     private final List<String> subCommandList = new ArrayList<>();
+    private final Component PREFIX = Messages.getPrefix(Component.empty(), Component.empty());
 
     public CrateCommand() {
+
+
+        addSubCommand((sender, args) -> {
+            Messages.loadMessages();
+            CrateManager.loadConfig(); 
+            sender.sendMessage(PREFIX.append(Component.text(" Reload Complete", NamedTextColor.WHITE)));
+        }, "reload");
 
         addSubCommand((sender, args) -> {
             if (sender instanceof Player player) {
@@ -31,12 +39,12 @@ public class CrateCommand implements TabExecutor {
                     var crate = CrateManager.getCrate(args[1]);
                     if (crate != null) {
                         crate.setPosition(CratePosition.fromLocation(player.getLocation()));
-                        player.sendMessage("block set");
+                        player.sendMessage(PREFIX.append(Component.text(" Set crate block at your current location !", NamedTextColor.WHITE)));
                         CrateManager.addCratePosition(crate);
                         CrateManager.saveConfig(crate);
-                    }
-                }
-            }
+                    } else sender.sendMessage(PREFIX.append(Component.text(" There's no crate named " + args[1], NamedTextColor.WHITE)));
+                } else sender.sendMessage("Usage: /crate setblock [name]");
+            } else sender.sendMessage("This command can only be run by a player.");
         }, "setblock");
 
         addSubCommand((sender, args) -> {
@@ -44,9 +52,9 @@ public class CrateCommand implements TabExecutor {
                 if (CrateManager.getCrate(args[1]) == null) {
                     var crate = Crate.createHorizontal(args[1], Component.text(args[1]));
                     CrateManager.CRATES.add(crate);
-                    sender.sendMessage("Crate " + args[1] + " created !");
+                    sender.sendMessage(PREFIX.append(Component.text(" Crate " + args[1] + " created !", NamedTextColor.WHITE)));
                     CrateManager.createConfig(crate);
-                } else sender.sendMessage("Crate already exist !");
+                } else sender.sendMessage(PREFIX.append(Component.text(" Crate already exist !", NamedTextColor.WHITE)));
             } else sender.sendMessage("Usage: /crate create [name]");
 
         }, "create");
@@ -56,9 +64,9 @@ public class CrateCommand implements TabExecutor {
                 var crate = CrateManager.getCrate(args[1]);
                 if (crate != null) {
                     CrateManager.removeCrate(args[1].toLowerCase());
-                    sender.sendMessage("Crate " + args[1] + " deleted !");
-                } else sender.sendMessage("There's no crate named " + args[1]);
-            } else sender.sendMessage("Usage: /crate delete [name]");
+                    sender.sendMessage(PREFIX.append(Component.text("Crate " + args[1] + " removed !", NamedTextColor.WHITE)));
+                } else sender.sendMessage(PREFIX.append(Component.text("There's no crate named " + args[1], NamedTextColor.WHITE)));
+            } else sender.sendMessage("Usage: /crate remove [name]");
 
         }, "remove");
 
@@ -76,8 +84,8 @@ public class CrateCommand implements TabExecutor {
                     if (crate != null) {
                         if (!crate.getRewards().isEmpty()) CrateManager.openCrate(crate, p);
                         else
-                            p.sendMessage("Please add reward /crate reward add <name> <chance> (It will add your holding item>");
-                    } else p.sendMessage("There's no crate named " + args[1]);
+                            p.sendMessage("Please add reward /crate reward <name> add <chance> (It will add your holding item>");
+                    } else p.sendMessage(PREFIX.append(Component.text("There's no crate named " + args[1], NamedTextColor.WHITE)));
                 } else sender.sendMessage("Usage: /crate open <name>");
             } else sender.sendMessage("This command can only be run by a player.");
 
@@ -99,13 +107,13 @@ public class CrateCommand implements TabExecutor {
                                     p.sendMessage("Reward added");
                                     return;
                                 }
-                                p.sendMessage("Please hold an item before executing this command !");
+                                p.sendMessage(PREFIX.append(Component.text("Please hold an item before executing this command !", NamedTextColor.WHITE)));
                                 return;
                             }
                             if (args[2].equalsIgnoreCase("remove") && NumberUtils.isDigits(args[3])) {
                                 crate.removeReward(Integer.parseInt(args[3]));
                                 CrateManager.saveConfig(crate);
-                                p.sendMessage("Reward removed");
+                                p.sendMessage(PREFIX.append(Component.text("Reward removed", NamedTextColor.WHITE)));
                             }
                         } else {
                             List<Reward> rewards = crate.getRewards();
@@ -113,7 +121,7 @@ public class CrateCommand implements TabExecutor {
                                 p.sendMessage(Component.text("- " + i + ": ").append(rewards.get(i).itemStack().displayName()).append(Component.text(" x" + rewards.get(i).itemStack().getAmount())));
                             }
                         }
-                    } else sender.sendMessage("There's no crate named " + args[1]);
+                    } else sender.sendMessage(PREFIX.append(Component.text("There's no crate named " + args[1], NamedTextColor.WHITE)));
                 } else sender.sendMessage("Usage: /crate reward [name]");
             } else sender.sendMessage("This command can only be run by a player.");
         }, "reward");
@@ -121,7 +129,7 @@ public class CrateCommand implements TabExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
-        if (!sender.hasPermission("amamcrate")) return false;
+        if (!sender.hasPermission("amcrate.crate")) return false;
         if (args.length > 0) {
             BiConsumer<CommandSender, String[]> action = subCommands.get(args[0]);
             if (action != null) {
@@ -135,12 +143,11 @@ public class CrateCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {
-        if (!sender.hasPermission("amamcrate")) return Collections.emptyList();
         List<String> matches = new ArrayList<>();
         if (args.length == 1)
             return StringUtil.copyPartialMatches(args[0], subCommandList, matches);
 
-        if (args.length == 2 && (args[0].equalsIgnoreCase("reward") || args[0].equalsIgnoreCase("remove") || args[0].equalsIgnoreCase("open"))) {
+        if (args.length == 2 && (args[0].equalsIgnoreCase("reward") || args[0].equalsIgnoreCase("remove") || args[0].equalsIgnoreCase("open") || args[0].equalsIgnoreCase("setblock"))) {
             return StringUtil.copyPartialMatches(args[1], CrateManager.getCratesId(), matches);
         }
 
